@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-let messageCounter = 0;
+import Image from 'next/image';
 
 interface Message {
-  id: string;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: number;
+  timestamp?: number;
 }
 
 interface ChatProps {
@@ -21,34 +19,17 @@ export default function Chat({ username }: ChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load messages from localStorage when component mounts
   useEffect(() => {
-    const savedMessages = localStorage.getItem(`chat_history_${username}`);
-    if (savedMessages) {
-      const parsedMessages = JSON.parse(savedMessages);
-      setMessages(parsedMessages);
-      messageCounter = parsedMessages.length; // Update counter based on loaded messages
-    }
-  }, [username]);
-
-  // Save messages to localStorage whenever they change
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem(`chat_history_${username}`, JSON.stringify(messages));
-    }
-  }, [messages, username]);
-
-  const generateMessageId = () => {
-    messageCounter += 1;
-    return `msg-${messageCounter}`;
-  };
+    // Generate a unique chat ID for this session
+    const chatId = `chat_${Date.now()}`;
+    localStorage.setItem('current_chat_id', chatId);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim()) return;
 
     const userMessage: Message = {
-      id: generateMessageId(),
       role: 'user',
       content: inputMessage.trim(),
       timestamp: Date.now()
@@ -56,48 +37,62 @@ export default function Chat({ username }: ChatProps) {
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
-    setIsLoading(true);
     setError(null);
 
     try {
-      console.log('Sending chat request...');
+      setIsLoading(true);
+
       const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_MISTRAL_API_KEY}`
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_MISTRAL_API_KEY}`,
         },
         body: JSON.stringify({
           model: 'mistral-tiny',
-          messages: [
-            ...messages.map(msg => ({
-              role: msg.role,
-              content: msg.content
-            })),
-            {
-              role: 'user',
-              content: userMessage.content
-            }
-          ]
-        })
+          messages: [...messages, userMessage].map(({ role, content }) => ({ role, content }))
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to get response from Mistral AI');
+        throw new Error(`API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Received response:', data);
-
+      
       const aiMessage: Message = {
-        id: generateMessageId(),
         role: 'assistant',
         content: data.choices[0].message.content,
         timestamp: Date.now()
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      const updatedMessages = [...messages, userMessage, aiMessage];
+      setMessages(updatedMessages);
+
+      // Save chat history
+      const chatId = localStorage.getItem('current_chat_id') || `chat_${Date.now()}`;
+      const chatHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');
+      
+      // Update or create chat entry
+      const chatEntry = {
+        id: chatId,
+        title: updatedMessages[0]?.content.slice(0, 30) + (updatedMessages[0]?.content.length > 30 ? '...' : '') || 'New Chat',
+        timestamp: new Date().toISOString(),
+      };
+
+      const existingChatIndex = chatHistory.findIndex((chat: any) => chat.id === chatId);
+      if (existingChatIndex === -1) {
+        chatHistory.unshift(chatEntry);
+      } else {
+        chatHistory[existingChatIndex] = chatEntry;
+      }
+
+      localStorage.setItem('chat_history', JSON.stringify(chatHistory));
+      localStorage.setItem(`chat_messages_${chatId}`, JSON.stringify(updatedMessages));
+
+      // Dispatch custom event to update navbar
+      window.dispatchEvent(new CustomEvent('chatHistoryUpdate'));
+
     } catch (error) {
       console.error('Error details:', error);
       setError(error instanceof Error ? error.message : 'An error occurred while communicating with the AI');
@@ -106,117 +101,80 @@ export default function Chat({ username }: ChatProps) {
     }
   };
 
-  const clearHistory = () => {
-    setMessages([]);
-    localStorage.removeItem(`chat_history_${username}`);
-    messageCounter = 0;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as any);
+    }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#1a1a1a]">
-      {/* Header with clear button */}
-      <div className="border-b border-gray-800 bg-[#1a1a1a] p-4">
-        <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <div className="text-white font-medium">Chat with AI</div>
-          <button
-            onClick={clearHistory}
-            className="text-gray-400 hover:text-white text-sm focus:outline-none transition-colors"
+    <div className="flex flex-col h-screen bg-[#1a1a1a] text-white">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`flex items-start space-x-2 ${
+              message.role === 'user' ? 'justify-end' : 'justify-start'
+            }`}
           >
-            Clear History
-          </button>
-        </div>
-      </div>
-
-      {/* Chat messages container */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-2xl mx-auto space-y-4">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-500 rounded-lg p-3 mb-4">
-              {error}
-            </div>
-          )}
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {message.role === 'assistant' && (
-                <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center mr-2">
-                  <span className="text-white text-sm">AI</span>
-                </div>
-              )}
-              <div className="flex flex-col">
-                <div
-                  className={`rounded-2xl px-4 py-2 max-w-[80%] ${
-                    message.role === 'user'
-                      ? 'bg-[#2a2a2a] text-white'
-                      : 'bg-[#2a2a2a] text-gray-200'
-                  }`}
-                >
-                  {message.content}
-                </div>
-                <div className={`text-xs text-gray-500 mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </div>
-              </div>
-              {message.role === 'user' && (
-                <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ml-2">
-                  <span className="text-white text-sm">{username[0].toUpperCase()}</span>
-                </div>
-              )}
-            </div>
-          ))}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center mr-2">
-                <span className="text-white text-sm">AI</span>
-              </div>
-              <div className="bg-[#2a2a2a] rounded-2xl px-4 py-2">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-.3s]" />
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-.5s]" />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Input area */}
-      <div className="border-t border-gray-800 bg-[#1a1a1a] p-4">
-        <div className="max-w-2xl mx-auto">
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Type your message here..."
-              className="flex-1 rounded-full bg-[#2a2a2a] border-none text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
-              disabled={isLoading}
-            />
-            <button
-              type="submit"
-              className="bg-purple-600 text-white rounded-full p-2 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isLoading}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-6 h-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+            {message.role === 'assistant' && (
+              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                <Image
+                  src="/robot.svg"
+                  alt="AI"
+                  width={20}
+                  height={20}
                 />
-              </svg>
-            </button>
-          </form>
-        </div>
+              </div>
+            )}
+            <div
+              className={`max-w-[80%] rounded-lg p-3 ${
+                message.role === 'user'
+                  ? 'bg-purple-600'
+                  : 'bg-gray-700'
+              }`}
+            >
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            </div>
+            {message.role === 'user' && (
+              <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+                {username.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+          </div>
+        )}
+        {error && (
+          <div className="text-red-500 text-center p-2 bg-red-100/10 rounded">
+            {error}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-gray-700 p-4">
+        <form onSubmit={handleSubmit} className="flex space-x-4">
+          <textarea
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type your message..."
+            className="flex-1 bg-gray-700 text-white rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+            rows={1}
+            style={{ maxHeight: '200px' }}
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !inputMessage.trim()}
+            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Send
+          </button>
+        </form>
       </div>
     </div>
   );

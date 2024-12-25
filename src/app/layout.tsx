@@ -1,4 +1,5 @@
 import './globals.css';
+import Navbar from '../components/Navbar';
 
 export default function RootLayout({
   children,
@@ -11,7 +12,12 @@ export default function RootLayout({
         <title>Chat App</title>
       </head>
       <body suppressHydrationWarning={true}>
-        <div id="app-root">{children}</div>
+        <div className="flex h-screen">
+          <Navbar />
+          <main className="flex-1 md:pl-[260px]">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );
