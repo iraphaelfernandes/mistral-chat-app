@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mistral Chat App
+
+A modern chat application built with Next.js that integrates with the Mistral AI API. This app provides a ChatGPT-like interface with chat history management and real-time updates.
+
+## Features
+
+### Chat Interface
+- Clean and responsive design with a dark theme
+- Real-time message updates
+- Loading states and error handling
+- Auto-scroll to latest messages
+- Mobile-responsive layout
+
+### Chat History Management
+- Persistent chat storage using localStorage
+- Organized chat history by timeframes:
+  - Today
+  - Yesterday
+  - Previous 7 Days
+- Ability to continue previous conversations
+- Real-time history updates across tabs
+
+### Navigation
+- Sidebar navigation for chat history
+- New chat button to start fresh conversations
+- Mobile-friendly hamburger menu
+- Chat title generation from first message
+
+### AI Integration
+- Powered by Mistral AI API
+- Natural language processing
+- Context-aware responses
+- Custom AI avatar for better UX
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+ installed
+- Mistral AI API key
 
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd mistral-chat-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create a `.env.local` file in the root directory and add your Mistral AI API key:
+```
+NEXT_PUBLIC_MISTRAL_API_KEY=your_api_key_here
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## Tech Stack
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- Mistral AI API
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment Variables
+- `NEXT_PUBLIC_MISTRAL_API_KEY`: Your Mistral AI API key
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security
+- API keys are stored in environment variables
+- Chat history is stored locally in the browser
+- No server-side storage of conversations
+- Secure API communication
 
-## Deploy on Vercel
+## Usage
+1. Start a new chat using the "New Chat" button
+2. Type your message and press Enter or click Send
+3. View chat history in the sidebar
+4. Click on any previous chat to continue the conversation
+5. Use the mobile menu button on small screens to access history
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
+Feel free to open issues and pull requests for any improvements.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.

@@ -5,18 +5,12 @@ import { useState, useEffect, useRef } from 'react';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  timestamp?: number;
 }
 
-interface ChatProps {
-  username: string;
-}
-
-export default function Chat({ username }: ChatProps) {
+export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [chatId, setChatId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -75,80 +69,67 @@ export default function Chat({ username }: ChatProps) {
     window.dispatchEvent(new CustomEvent('chatHistoryUpdate'));
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = { role: 'user' as const, content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map(({ role, content }) => ({ role, content }))
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get response');
+      }
+
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: data.choices[0].message.content
+      }]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: error instanceof Error 
+          ? `Error: ${error.message}. Please check your API key and try again.`
+          : 'Sorry, there was an error processing your request. Please try again.'
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (messages.length > 0) {
       updateChatHistory();
     }
   }, [messages, chatId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputMessage.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      role: 'user',
-      content: inputMessage.trim(),
-      timestamp: Date.now()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_MISTRAL_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'mistral-tiny',
-          messages: [...messages, userMessage].map(({ role, content }) => ({ role, content }))
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      const aiMessage: Message = {
-        role: 'assistant',
-        content: data.choices[0].message.content,
-        timestamp: Date.now()
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-
-    } catch (error) {
-      console.error('Error details:', error);
-      setError(error instanceof Error ? error.message : 'An error occurred while communicating with the AI');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e as any);
-    }
-  };
-
   return (
-    <div className="flex flex-col h-screen bg-[#1a1a1a] text-white">
+    <div className="fixed inset-0 md:pl-[260px] flex flex-col bg-gray-800">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex items-start space-x-2 ${
-              message.role === 'user' ? 'justify-end' : 'justify-start'
-            }`}
+            className={`flex items-start space-x-4 ${
+              message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+            } ${message.role === 'assistant' ? 'bg-gray-700' : ''} p-4 rounded-lg`}
           >
-            {message.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+            {message.role === 'assistant' ? (
+              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
                 <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
                   <path d="M8.5 14C8.22386 14 8 13.7761 8 13.5C8 13.2239 8.22386 13 8.5 13C8.77614 13 9 13.2239 9 13.5C9 13.7761 8.77614 14 8.5 14Z" fill="white" stroke="white" />
                   <path d="M15.5 14C15.2239 14 15 13.7761 15 13.5C15 13.2239 15.2239 13 15.5 13C15.7761 13 16 13.2239 16 13.5C16 13.7761 15.7761 14 15.5 14Z" fill="white" stroke="white" />
@@ -164,53 +145,42 @@ export default function Chat({ username }: ChatProps) {
                   <path d="M19 6V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V6C5 4.89543 5.89543 4 7 4H17C18.1046 4 19 4.89543 19 6Z" stroke="white" />
                 </svg>
               </div>
-            )}
-            <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === 'user'
-                  ? 'bg-purple-600'
-                  : 'bg-gray-700'
-              }`}
-            >
-              <p className="whitespace-pre-wrap">{message.content}</p>
-            </div>
-            {message.role === 'user' && (
-              <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                {username.charAt(0).toUpperCase()}
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
             )}
+            <div className={`flex-1 ${message.role === 'user' ? 'text-right' : ''}`}>
+              <p className={`whitespace-pre-wrap inline-block ${
+                message.role === 'user' ? 'bg-purple-600' : ''
+              } p-2 rounded-lg`}>
+                {message.content}
+              </p>
+            </div>
           </div>
         ))}
-        {isLoading && (
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-          </div>
-        )}
-        {error && (
-          <div className="text-red-500 text-center p-2 bg-red-100/10 rounded">
-            {error}
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
       <div className="border-t border-gray-700 p-4">
-        <form onSubmit={handleSubmit} className="flex space-x-4">
-          <textarea
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
+        <form onSubmit={handleSubmit} className="flex gap-4 max-w-4xl mx-auto">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1 bg-gray-700 text-white rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-            rows={1}
-            style={{ maxHeight: '200px' }}
+            className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            disabled={isLoading}
           />
           <button
             type="submit"
-            disabled={isLoading || !inputMessage.trim()}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
           >
-            Send
+            {isLoading ? 'Sending...' : 'Send'}
           </button>
         </form>
       </div>
