@@ -9,3 +9,7 @@ export const Chat = dynamic(() => import('./Chat'), {
 export const Navbar = dynamic(() => import('./Navbar'), {
   ssr: false,
 });
+
+export const Login = dynamic(() => import('./Login'), {
+  ssr: false,
+});

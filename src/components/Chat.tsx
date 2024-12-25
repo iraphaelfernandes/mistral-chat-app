@@ -7,7 +7,11 @@ interface Message {
   content: string;
 }
 
-export default function Chat() {
+interface ChatProps {
+  username: string;
+}
+
+export default function Chat({ username }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
