@@ -11,29 +11,68 @@ interface Message {
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() || isLoading) return;
 
-    const newMessage: Message = {
+    const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: inputMessage.trim()
     };
 
-    setMessages(prev => [...prev, newMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
+    setIsLoading(true);
+    setError(null);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      console.log('Sending chat request...');
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_MISTRAL_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'mistral-tiny',
+          messages: [
+            ...messages.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            })),
+            {
+              role: 'user',
+              content: userMessage.content
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to get response from Mistral AI');
+      }
+
+      const data = await response.json();
+      console.log('Received response:', data);
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'This is a placeholder response.'
+        content: data.choices[0].message.content
       };
+
       setMessages(prev => [...prev, aiMessage]);
-    }, 500);
+    } catch (error) {
+      console.error('Error details:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred while communicating with the AI');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -41,6 +80,11 @@ export default function Chat() {
       {/* Chat messages container */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-2xl mx-auto space-y-4">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/50 text-red-500 rounded-lg p-3 mb-4">
+              {error}
+            </div>
+          )}
           {messages.map((message) => (
             <div
               key={message.id}
@@ -67,6 +111,20 @@ export default function Chat() {
               )}
             </div>
           ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center mr-2">
+                <span className="text-white text-sm">AI</span>
+              </div>
+              <div className="bg-[#2a2a2a] rounded-2xl px-4 py-2">
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-.3s]" />
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-.5s]" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -80,10 +138,12 @@ export default function Chat() {
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="Type your message here..."
               className="flex-1 rounded-full bg-[#2a2a2a] border-none text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
+              disabled={isLoading}
             />
             <button
               type="submit"
-              className="bg-purple-600 text-white rounded-full p-2 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="bg-purple-600 text-white rounded-full p-2 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
