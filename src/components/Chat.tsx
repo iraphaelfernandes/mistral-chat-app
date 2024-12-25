@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -120,12 +119,20 @@ export default function Chat({ username }: ChatProps) {
           >
             {message.role === 'assistant' && (
               <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-                <Image
-                  src="/robot.svg"
-                  alt="AI"
-                  width={20}
-                  height={20}
-                />
+                <svg width="20" height="20" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
+                  <path d="M8.5 14C8.22386 14 8 13.7761 8 13.5C8 13.2239 8.22386 13 8.5 13C8.77614 13 9 13.2239 9 13.5C9 13.7761 8.77614 14 8.5 14Z" fill="white" stroke="white" />
+                  <path d="M15.5 14C15.2239 14 15 13.7761 15 13.5C15 13.2239 15.2239 13 15.5 13C15.7761 13 16 13.2239 16 13.5C16 13.7761 15.7761 14 15.5 14Z" fill="white" stroke="white" />
+                  <path d="M12 16C11.2044 16 10.4413 15.6839 9.87868 15.1213C9.31607 14.5587 9 13.7956 9 13" stroke="white" strokeLinecap="round" />
+                  <path d="M18 9V11C18 12.1046 18.8954 13 20 13H21" stroke="white" strokeLinecap="round" />
+                  <path d="M6 9V11C6 12.1046 5.10457 13 4 13H3" stroke="white" strokeLinecap="round" />
+                  <path d="M18 15V16C18 17.1046 18.8954 18 20 18H21" stroke="white" strokeLinecap="round" />
+                  <path d="M6 15V16C6 17.1046 5.10457 18 4 18H3" stroke="white" strokeLinecap="round" />
+                  <path d="M19 2L17.5 3.5" stroke="white" strokeLinecap="round" />
+                  <path d="M5 2L6.5 3.5" stroke="white" strokeLinecap="round" />
+                  <path d="M12 2V4" stroke="white" strokeLinecap="round" />
+                  <path d="M3 21H21" stroke="white" strokeLinecap="round" />
+                  <path d="M19 6V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V6C5 4.89543 5.89543 4 7 4H17C18.1046 4 19 4.89543 19 6Z" stroke="white" />
+                </svg>
               </div>
             )}
             <div
