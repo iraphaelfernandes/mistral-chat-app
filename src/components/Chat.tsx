@@ -37,7 +37,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-[#1a1a1a]">
       {/* Chat messages container */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-2xl mx-auto space-y-4">
@@ -47,21 +47,21 @@ export default function Chat() {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {message.role === 'assistant' && (
-                <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center mr-2">
+                <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center mr-2">
                   <span className="text-white text-sm">AI</span>
                 </div>
               )}
               <div
                 className={`rounded-2xl px-4 py-2 max-w-[80%] ${
                   message.role === 'user'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white shadow-sm'
+                    ? 'bg-[#2a2a2a] text-white'
+                    : 'bg-[#2a2a2a] text-gray-200'
                 }`}
               >
                 {message.content}
               </div>
               {message.role === 'user' && (
-                <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ml-2">
+                <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ml-2">
                   <span className="text-white text-sm">U</span>
                 </div>
               )}
@@ -71,7 +71,7 @@ export default function Chat() {
       </div>
 
       {/* Input area */}
-      <div className="border-t bg-white p-4">
+      <div className="border-t border-gray-800 bg-[#1a1a1a] p-4">
         <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
@@ -79,19 +79,19 @@ export default function Chat() {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="Type your message here..."
-              className="flex-1 rounded-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 rounded-full bg-[#2a2a2a] border-none text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500"
             />
             <button
               type="submit"
-              className="bg-blue-500 text-white rounded-full px-6 py-2 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-purple-600 text-white rounded-full p-2 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={1.5}
+                strokeWidth={2}
                 stroke="currentColor"
-                className="w-5 h-5 rotate-90"
+                className="w-6 h-6 rotate-90"
               >
                 <path
                   strokeLinecap="round"
