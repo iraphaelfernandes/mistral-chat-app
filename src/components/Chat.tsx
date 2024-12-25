@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,16 +17,73 @@ export default function Chat({ username }: ChatProps) {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [chatId, setChatId] = useState<string>('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Generate a unique chat ID for this session
-    const chatId = `chat_${Date.now()}`;
-    localStorage.setItem('current_chat_id', chatId);
+    const storedChatId = localStorage.getItem('current_chat_id');
+    if (storedChatId) {
+      setChatId(storedChatId);
+      const storedMessages = localStorage.getItem(`chat_messages_${storedChatId}`);
+      if (storedMessages) {
+        setMessages(JSON.parse(storedMessages));
+      }
+    } else {
+      const newChatId = `chat_${Date.now()}`;
+      setChatId(newChatId);
+      localStorage.setItem('current_chat_id', newChatId);
+    }
+
+    const handleChatSelect = (e: CustomEvent) => {
+      const { id, messages: selectedMessages } = e.detail;
+      setChatId(id);
+      setMessages(selectedMessages);
+    };
+
+    window.addEventListener('chatSelect', handleChatSelect as EventListener);
+
+    return () => {
+      window.removeEventListener('chatSelect', handleChatSelect as EventListener);
+    };
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const updateChatHistory = () => {
+    const history = localStorage.getItem('chat_history') || '[]';
+    const chatHistory = JSON.parse(history);
+    
+    const existingChatIndex = chatHistory.findIndex((chat: any) => chat.id === chatId);
+    const chatTitle = messages[0]?.content.slice(0, 30) + '...' || 'New Chat';
+    
+    if (existingChatIndex !== -1) {
+      chatHistory[existingChatIndex].title = chatTitle;
+      chatHistory[existingChatIndex].timestamp = new Date().toISOString();
+    } else {
+      chatHistory.unshift({
+        id: chatId,
+        title: chatTitle,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    localStorage.setItem('chat_history', JSON.stringify(chatHistory));
+    localStorage.setItem(`chat_messages_${chatId}`, JSON.stringify(messages));
+    
+    window.dispatchEvent(new CustomEvent('chatHistoryUpdate'));
+  };
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      updateChatHistory();
+    }
+  }, [messages, chatId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: Message = {
       role: 'user',
@@ -36,11 +93,9 @@ export default function Chat({ username }: ChatProps) {
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
-    setError(null);
+    setIsLoading(true);
 
     try {
-      setIsLoading(true);
-
       const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -65,32 +120,7 @@ export default function Chat({ username }: ChatProps) {
         timestamp: Date.now()
       };
 
-      const updatedMessages = [...messages, userMessage, aiMessage];
-      setMessages(updatedMessages);
-
-      // Save chat history
-      const chatId = localStorage.getItem('current_chat_id') || `chat_${Date.now()}`;
-      const chatHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');
-      
-      // Update or create chat entry
-      const chatEntry = {
-        id: chatId,
-        title: updatedMessages[0]?.content.slice(0, 30) + (updatedMessages[0]?.content.length > 30 ? '...' : '') || 'New Chat',
-        timestamp: new Date().toISOString(),
-      };
-
-      const existingChatIndex = chatHistory.findIndex((chat: any) => chat.id === chatId);
-      if (existingChatIndex === -1) {
-        chatHistory.unshift(chatEntry);
-      } else {
-        chatHistory[existingChatIndex] = chatEntry;
-      }
-
-      localStorage.setItem('chat_history', JSON.stringify(chatHistory));
-      localStorage.setItem(`chat_messages_${chatId}`, JSON.stringify(updatedMessages));
-
-      // Dispatch custom event to update navbar
-      window.dispatchEvent(new CustomEvent('chatHistoryUpdate'));
+      setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
       console.error('Error details:', error);
@@ -161,6 +191,7 @@ export default function Chat({ username }: ChatProps) {
             {error}
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="border-t border-gray-700 p-4">

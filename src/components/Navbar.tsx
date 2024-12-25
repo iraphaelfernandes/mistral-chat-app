@@ -13,7 +13,6 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Initial load
     const loadHistory = () => {
       const history = localStorage.getItem('chat_history');
       if (history) {
@@ -21,38 +20,63 @@ export default function Navbar() {
       }
     };
 
-    // Load initial history
     loadHistory();
 
-    // Listen for storage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'chat_history') {
         loadHistory();
       }
     };
 
-    // Listen for custom event for same-tab updates
     const handleCustomEvent = (e: CustomEvent) => {
       loadHistory();
     };
 
-    // Add event listeners
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('chatHistoryUpdate', handleCustomEvent as EventListener);
 
     return () => {
-      // Clean up event listeners
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('chatHistoryUpdate', handleCustomEvent as EventListener);
     };
   }, []);
 
   const startNewChat = () => {
-    // Clear current chat messages
     const chatId = `chat_${Date.now()}`;
     localStorage.setItem('current_chat_id', chatId);
-    window.location.reload();
+    window.dispatchEvent(new CustomEvent('chatSelect', { detail: { id: chatId, messages: [] } }));
   };
+
+  const selectChat = (chatId: string) => {
+    localStorage.setItem('current_chat_id', chatId);
+    const messages = localStorage.getItem(`chat_messages_${chatId}`);
+    window.dispatchEvent(new CustomEvent('chatSelect', { 
+      detail: { 
+        id: chatId, 
+        messages: messages ? JSON.parse(messages) : [] 
+      } 
+    }));
+  };
+
+  const renderChatButton = (chat: ChatHistory) => (
+    <button
+      key={chat.id}
+      className="flex items-center gap-3 rounded-md p-3 text-sm hover:bg-gray-500/10 w-full text-left"
+      onClick={() => selectChat(chat.id)}
+    >
+      <svg 
+        stroke="currentColor" 
+        fill="none" 
+        strokeWidth="2" 
+        viewBox="0 0 24 24" 
+        className="w-4 h-4"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+      </svg>
+      {chat.title}
+    </button>
+  );
 
   return (
     <nav className={`fixed top-0 left-0 h-full bg-[#202123] w-[260px] text-gray-200 p-2 transition-transform duration-200 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
@@ -97,24 +121,7 @@ export default function Navbar() {
                   const today = new Date();
                   return date.toDateString() === today.toDateString();
                 })
-                .map(chat => (
-                  <button
-                    key={chat.id}
-                    className="flex items-center gap-3 rounded-md p-3 text-sm hover:bg-gray-500/10 w-full text-left"
-                  >
-                    <svg 
-                      stroke="currentColor" 
-                      fill="none" 
-                      strokeWidth="2" 
-                      viewBox="0 0 24 24" 
-                      className="w-4 h-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-                    </svg>
-                    {chat.title}
-                  </button>
-                ))}
+                .map(renderChatButton)}
             </div>
 
             {/* Yesterday */}
@@ -127,24 +134,7 @@ export default function Navbar() {
                   yesterday.setDate(yesterday.getDate() - 1);
                   return date.toDateString() === yesterday.toDateString();
                 })
-                .map(chat => (
-                  <button
-                    key={chat.id}
-                    className="flex items-center gap-3 rounded-md p-3 text-sm hover:bg-gray-500/10 w-full text-left"
-                  >
-                    <svg 
-                      stroke="currentColor" 
-                      fill="none" 
-                      strokeWidth="2" 
-                      viewBox="0 0 24 24" 
-                      className="w-4 h-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-                    </svg>
-                    {chat.title}
-                  </button>
-                ))}
+                .map(renderChatButton)}
             </div>
 
             {/* Previous 7 Days */}
@@ -158,24 +148,7 @@ export default function Navbar() {
                   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
                   return date < today && date > sevenDaysAgo;
                 })
-                .map(chat => (
-                  <button
-                    key={chat.id}
-                    className="flex items-center gap-3 rounded-md p-3 text-sm hover:bg-gray-500/10 w-full text-left"
-                  >
-                    <svg 
-                      stroke="currentColor" 
-                      fill="none" 
-                      strokeWidth="2" 
-                      viewBox="0 0 24 24" 
-                      className="w-4 h-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-                    </svg>
-                    {chat.title}
-                  </button>
-                ))}
+                .map(renderChatButton)}
             </div>
           </div>
         </div>
