@@ -2,24 +2,35 @@
 
 import { useState } from 'react';
 
+let messageCounter = 0;
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
 }
 
-export default function Chat() {
+interface ChatProps {
+  username: string;
+}
+
+export default function Chat({ username }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const generateMessageId = () => {
+    messageCounter += 1;
+    return `msg-${messageCounter}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: generateMessageId(),
       role: 'user',
       content: inputMessage.trim()
     };
@@ -61,7 +72,7 @@ export default function Chat() {
       console.log('Received response:', data);
 
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: generateMessageId(),
         role: 'assistant',
         content: data.choices[0].message.content
       };
@@ -106,7 +117,7 @@ export default function Chat() {
               </div>
               {message.role === 'user' && (
                 <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ml-2">
-                  <span className="text-white text-sm">U</span>
+                  <span className="text-white text-sm">{username[0].toUpperCase()}</span>
                 </div>
               )}
             </div>
