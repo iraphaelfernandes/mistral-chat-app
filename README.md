@@ -1,14 +1,13 @@
 # Mistral Chat App
 
-A modern chat application built with Next.js that integrates with the Mistral AI API. This app provides a ChatGPT-like interface with chat history management and real-time updates.
+A chat application built with Next.js that integrates with the Mistral AI API. This app provides a chat history management and real-time updates.
 
 ## Features
 
 ### Chat Interface
-- Clean and responsive design with a dark theme
+- Dynamic dark/light theme switching
 - Real-time message updates
 - Loading states and error handling
-- Auto-scroll to latest messages
 - Mobile-responsive layout
 
 ### Chat History Management
@@ -23,14 +22,14 @@ A modern chat application built with Next.js that integrates with the Mistral AI
 ### Navigation
 - Sidebar navigation for chat history
 - New chat button to start fresh conversations
-- Mobile-friendly hamburger menu
-- Chat title generation from first message
+- Chat title generation
 
 ### AI Integration
 - Powered by Mistral AI API
 - Natural language processing
 - Context-aware responses
-- Custom AI avatar for better UX
+
+
 
 ## Getting Started
 
@@ -42,7 +41,7 @@ A modern chat application built with Next.js that integrates with the Mistral AI
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/iraphaelfernandes/mistral-chat-app.git
 cd mistral-chat-app
 ```
 
