@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
-import Navbar from '../components/Navbar';
+import { ThemeProvider } from '@/context/ThemeContext';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'Chat App',
+  description: 'A chat application powered by Mistral AI',
+};
 
 export default function RootLayout({
   children,
@@ -7,17 +16,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <title>Chat App</title>
-      </head>
-      <body suppressHydrationWarning={true}>
-        <div className="flex h-screen">
-          <Navbar />
-          <main className="flex-1 md:pl-[260px]">
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        <ThemeProvider>
+          <div className="min-h-screen bg-white dark:bg-[#1a1a1a] transition-colors">
             {children}
-          </main>
-        </div>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

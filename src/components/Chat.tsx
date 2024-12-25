@@ -123,14 +123,14 @@ export default function Chat({ username }: ChatProps) {
   }, [messages, chatId]);
 
   return (
-    <div className="fixed inset-0 md:pl-[260px] flex flex-col bg-gray-800">
+    <div className="fixed inset-0 md:pl-[260px] flex flex-col bg-white dark:bg-gray-800">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message, index) => (
           <div
             key={index}
             className={`flex items-start space-x-4 ${
               message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-            } ${message.role === 'assistant' ? 'bg-gray-700' : ''} p-4 rounded-lg`}
+            } ${message.role === 'assistant' ? 'bg-gray-100 dark:bg-gray-700' : ''} p-4 rounded-lg`}
           >
             {message.role === 'assistant' ? (
               <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
@@ -156,7 +156,7 @@ export default function Chat({ username }: ChatProps) {
             )}
             <div className={`flex-1 ${message.role === 'user' ? 'text-right' : ''}`}>
               <p className={`whitespace-pre-wrap inline-block ${
-                message.role === 'user' ? 'bg-purple-600' : ''
+                message.role === 'user' ? 'bg-purple-600 text-white' : 'text-gray-900 dark:text-white'
               } p-2 rounded-lg`}>
                 {message.content}
               </p>
@@ -166,14 +166,14 @@ export default function Chat({ username }: ChatProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-gray-700 p-4">
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
         <form onSubmit={handleSubmit} className="flex gap-4 max-w-4xl mx-auto">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
             disabled={isLoading}
           />
           <button

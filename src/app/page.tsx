@@ -21,21 +21,19 @@ export default function Home() {
   };
 
   if (!mounted) {
-    return <div className="fixed inset-0 bg-[#1a1a1a]" />;
+    return null;
   }
 
   if (!username) {
-    return (
-      <div className="fixed inset-0 bg-[#1a1a1a]">
-        <Login onLogin={handleLogin} />
-      </div>
-    );
+    return <Login onLogin={handleLogin} />;
   }
 
   return (
-    <div className="fixed inset-0 bg-[#1a1a1a]">
+    <div className="flex h-screen">
       <Navbar />
-      <Chat username={username} />
+      <main className="flex-1 md:pl-[260px]">
+        <Chat username={username} />
+      </main>
     </div>
   );
 }

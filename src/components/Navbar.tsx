@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import ThemeToggle from './ThemeToggle';
 
 interface ChatHistory {
   id: string;
@@ -98,32 +99,35 @@ export default function Navbar() {
         </svg>
       </button>
 
-      <nav className={`fixed top-0 left-0 h-full w-[260px] bg-[#202123] text-gray-200 p-2 transform transition-transform duration-200 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 z-40`}>
+      <nav className={`fixed top-0 left-0 h-full w-[260px] bg-white dark:bg-[#202123] text-gray-900 dark:text-gray-200 p-2 transform transition-transform duration-200 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 z-40 border-r border-gray-200 dark:border-gray-700`}>
         <div className="flex flex-col h-full">
           {/* New Chat Button */}
-          <button 
-            className="flex items-center gap-3 rounded-md border border-white/20 p-3 text-sm hover:bg-gray-500/10 mb-2 w-full"
-            onClick={startNewChat}
-          >
-            <svg 
-              stroke="currentColor" 
-              fill="none" 
-              strokeWidth="2" 
-              viewBox="0 0 24 24" 
-              className="w-4 h-4"
-              xmlns="http://www.w3.org/2000/svg"
+          <div className="flex items-center justify-between mb-2">
+            <button 
+              className="flex items-center gap-3 rounded-md border border-gray-300 dark:border-gray-600 p-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 flex-1"
+              onClick={startNewChat}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            New chat
-          </button>
+              <svg 
+                stroke="currentColor" 
+                fill="none" 
+                strokeWidth="2" 
+                viewBox="0 0 24 24" 
+                className="w-4 h-4"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              New chat
+            </button>
+            <ThemeToggle />
+          </div>
 
           {/* History Sections */}
           <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-2 text-gray-100 text-sm">
+            <div className="flex flex-col gap-2">
               {/* Today */}
               <div className="flex flex-col gap-2">
-                <h3 className="text-xs text-gray-500 font-medium px-3 py-2">Today</h3>
+                <h3 className="text-xs text-gray-500 dark:text-gray-400 font-medium px-3 py-2">Today</h3>
                 {chatHistory
                   .filter(chat => {
                     const date = new Date(chat.timestamp);
@@ -135,7 +139,7 @@ export default function Navbar() {
 
               {/* Yesterday */}
               <div className="flex flex-col gap-2">
-                <h3 className="text-xs text-gray-500 font-medium px-3 py-2">Yesterday</h3>
+                <h3 className="text-xs text-gray-500 dark:text-gray-400 font-medium px-3 py-2">Yesterday</h3>
                 {chatHistory
                   .filter(chat => {
                     const date = new Date(chat.timestamp);
@@ -148,7 +152,7 @@ export default function Navbar() {
 
               {/* Previous 7 Days */}
               <div className="flex flex-col gap-2">
-                <h3 className="text-xs text-gray-500 font-medium px-3 py-2">Previous 7 Days</h3>
+                <h3 className="text-xs text-gray-500 dark:text-gray-400 font-medium px-3 py-2">Previous 7 Days</h3>
                 {chatHistory
                   .filter(chat => {
                     const date = new Date(chat.timestamp);
