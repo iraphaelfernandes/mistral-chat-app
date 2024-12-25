@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Chat from '../components/Chat';
 import Login from '../components/Login';
 
-export default function Home() {
+export default function ClientEntry() {
   const [mounted, setMounted] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 let messageCounter = 0;
 
@@ -8,6 +8,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  timestamp: number;
 }
 
 interface ChatProps {
@@ -19,6 +20,23 @@ export default function Chat({ username }: ChatProps) {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load messages from localStorage when component mounts
+  useEffect(() => {
+    const savedMessages = localStorage.getItem(`chat_history_${username}`);
+    if (savedMessages) {
+      const parsedMessages = JSON.parse(savedMessages);
+      setMessages(parsedMessages);
+      messageCounter = parsedMessages.length; // Update counter based on loaded messages
+    }
+  }, [username]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(`chat_history_${username}`, JSON.stringify(messages));
+    }
+  }, [messages, username]);
 
   const generateMessageId = () => {
     messageCounter += 1;
@@ -32,7 +50,8 @@ export default function Chat({ username }: ChatProps) {
     const userMessage: Message = {
       id: generateMessageId(),
       role: 'user',
-      content: inputMessage.trim()
+      content: inputMessage.trim(),
+      timestamp: Date.now()
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -74,7 +93,8 @@ export default function Chat({ username }: ChatProps) {
       const aiMessage: Message = {
         id: generateMessageId(),
         role: 'assistant',
-        content: data.choices[0].message.content
+        content: data.choices[0].message.content,
+        timestamp: Date.now()
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -86,8 +106,27 @@ export default function Chat({ username }: ChatProps) {
     }
   };
 
+  const clearHistory = () => {
+    setMessages([]);
+    localStorage.removeItem(`chat_history_${username}`);
+    messageCounter = 0;
+  };
+
   return (
     <div className="flex flex-col h-screen bg-[#1a1a1a]">
+      {/* Header with clear button */}
+      <div className="border-b border-gray-800 bg-[#1a1a1a] p-4">
+        <div className="max-w-2xl mx-auto flex justify-between items-center">
+          <div className="text-white font-medium">Chat with AI</div>
+          <button
+            onClick={clearHistory}
+            className="text-gray-400 hover:text-white text-sm focus:outline-none transition-colors"
+          >
+            Clear History
+          </button>
+        </div>
+      </div>
+
       {/* Chat messages container */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-2xl mx-auto space-y-4">
@@ -106,14 +145,19 @@ export default function Chat({ username }: ChatProps) {
                   <span className="text-white text-sm">AI</span>
                 </div>
               )}
-              <div
-                className={`rounded-2xl px-4 py-2 max-w-[80%] ${
-                  message.role === 'user'
-                    ? 'bg-[#2a2a2a] text-white'
-                    : 'bg-[#2a2a2a] text-gray-200'
-                }`}
-              >
-                {message.content}
+              <div className="flex flex-col">
+                <div
+                  className={`rounded-2xl px-4 py-2 max-w-[80%] ${
+                    message.role === 'user'
+                      ? 'bg-[#2a2a2a] text-white'
+                      : 'bg-[#2a2a2a] text-gray-200'
+                  }`}
+                >
+                  {message.content}
+                </div>
+                <div className={`text-xs text-gray-500 mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </div>
               </div>
               {message.role === 'user' && (
                 <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ml-2">
